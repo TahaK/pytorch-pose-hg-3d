@@ -18,4 +18,4 @@ EXPOSE 8888
 
 WORKDIR /pytorch-pose-hg-3d
 
-# CMD [ "python src/demo.py -demo images/h36m_1214.png -loadModel models/hgreg-3d.pth" ]
+CMD ["jupyter", "notebook", "--no-browser", "--ip=0.0.0.0", "--allow-root"]
