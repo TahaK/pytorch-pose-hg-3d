@@ -1,4 +1,4 @@
-FROM gcr.io/tahak-dev/pytorch-pose-hg-3d
+FROM gcr.io/tahak-dev/github-tahak-pytorch
 LABEL maintainer="Mustafa Taha Kocyigit <taha.kocyigit@gmail.com>"
 
 RUN apt-get update && apt-get install -y \ 
