@@ -29,10 +29,9 @@ def show2D(img, points, c):
   return img
 
 class Debugger(object):
-  def __init__(self):
-    self.plt = plt
-    self.fig = self.plt.figure()
-    self.ax = self.fig.add_subplot((111),projection='3d')
+  def __init__(self,fig):
+    self.fig = fig
+    self.ax = self.fig.add_subplot((121),projection='3d')
     self.ax.set_xlabel('z') 
     self.ax.set_ylabel('x') 
     self.ax.set_zlabel('y')
@@ -50,7 +49,6 @@ class Debugger(object):
     Zb = 0.5*max_range*np.mgrid[-1:2:2,-1:2:2,-1:2:2][2].flatten() + 0.5*(self.zmax+self.zmin)
     for xb, yb, zb in zip(Xb, Yb, Zb):
       self.ax.plot([xb], [yb], [zb], 'w')
-    self.plt.show()
     
   def addImg(self, img, imgId = 0):
     self.imgs[imgId] = img.copy()
@@ -59,9 +57,8 @@ class Debugger(object):
     self.imgs[imgId] = show2D(self.imgs[imgId], point, c)
   
   def showImg(self, pause = False, imgId = 0):
-    cv2.imshow('{}'.format(imgId), self.imgs[imgId])
-    if pause:
-      cv2.waitKey()
+    ax2 = self.fig.add_subplot(122)
+    ax2.imshow(self.imgs[imgId])
       
   def saveImg(self, path = 'debug/debug.png', imgId = 0):
     cv2.imwrite(path, self.imgs[imgId])
