@@ -69,7 +69,7 @@ def chose_right(pose):
 
 
 def get_boundries(pose,frame_width,frame_height):
-    if len(pose['people'] > 1):
+    if len(pose['people']) > 1:
         index = chose_right(pose)
     else:
         index = 0
