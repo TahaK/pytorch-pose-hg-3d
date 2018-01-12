@@ -56,12 +56,28 @@ print(pose_dir)
 print(output_dir)
 # In[3]:
 
+def chose_right(pose):
+    index = 0
+    xmax = 0
+    for i in range(len(pose['people'])):
+        x = np.array(pose['people'][i]['pose_keypoints'][1::3])
+        x_max = np.max(x[np.nonzero(x)])
+        if x_max > xmax:
+            xmax = x_max
+            index = i
+    return index
+
 
 def get_boundries(pose,frame_width,frame_height):
-    x = np.array(pose['people'][-1]['pose_keypoints'][1::3])
+    if len(pose['people'] > 1):
+        index = chose_right(pose)
+    else:
+        index = 0
+    
+    x = np.array(pose['people'][index]['pose_keypoints'][1::3])
     x_min = np.min(x[np.nonzero(x)])
     x_max = np.max(x[np.nonzero(x)])
-    y = np.array(pose['people'][-1]['pose_keypoints'][0::3])
+    y = np.array(pose['people'][index]['pose_keypoints'][0::3])
     y_min = np.min(y[np.nonzero(y)])
     y_max = np.max(y[np.nonzero(y)])
     
@@ -99,22 +115,21 @@ for i in range(args.num_videos):
         print( output_dir+basename+'.mp4')
         while success:
             success,image = vidcap.read()
-            if count % 100 == 0:
-                pose = json.load(open(poses[count]))
-                if len(pose['people']) > 0:
-                    x1,x2,y1,y2 =get_boundries(pose,image.shape[0],image.shape[1])
-                    img = cv2.resize(image[x1:x2,y1:y2], (256, 256)) #[:,-464:]
-                    input = torch.from_numpy(img.transpose(2, 0, 1)).float() / 256.
-                    input = input.view(1, input.size(0), input.size(1), input.size(2))
-                    input_var = torch.autograd.Variable(input).float().cuda()
-                    output = model(input_var)
-                    pred = getPreds((output[-2].data).cpu().numpy())[0] * 4
-                    reg = (output[-1].data).cpu().numpy().reshape(pred.shape[0], 1)
-                    debugger = Debugger(fig)
-                    debugger.addImg((input[0].numpy().transpose(1, 2, 0)*256).astype(np.uint8))
-                    debugger.addPoint2D(pred, (255, 0, 0))
-                    debugger.addPoint3D(np.concatenate([pred, (reg + 1) / 2. * 256], axis = 1))
-                    debugger.show3D()
-                    debugger.showImg()
-                    writer.grab_frame()
+            pose = json.load(open(poses[count]))
+            if len(pose['people']) > 0:
+                x1,x2,y1,y2 =get_boundries(pose,image.shape[0],image.shape[1])
+                img = cv2.resize(image[x1:x2,y1:y2], (256, 256)) #[:,-464:]
+                input = torch.from_numpy(img.transpose(2, 0, 1)).float() / 256.
+                input = input.view(1, input.size(0), input.size(1), input.size(2))
+                input_var = torch.autograd.Variable(input).float().cuda()
+                output = model(input_var)
+                pred = getPreds((output[-2].data).cpu().numpy())[0] * 4
+                reg = (output[-1].data).cpu().numpy().reshape(pred.shape[0], 1)
+                debugger = Debugger(fig)
+                debugger.addImg((input[0].numpy().transpose(1, 2, 0)*256).astype(np.uint8))
+                debugger.addPoint2D(pred, (255, 0, 0))
+                debugger.addPoint3D(np.concatenate([pred, (reg + 1) / 2. * 256], axis = 1))
+                debugger.show3D()
+                debugger.showImg()
+                writer.grab_frame()
             count += 1
