@@ -60,7 +60,7 @@ def chose_right(pose):
     index = 0
     xmax = 0
     for i in range(len(pose['people'])):
-        x = np.array(pose['people'][i]['pose_keypoints'][1::3])
+        x = np.array(pose['people'][i]['pose_keypoints'][0::3])
         x_max = np.max(x[np.nonzero(x)])
         if x_max > xmax:
             xmax = x_max
@@ -70,6 +70,7 @@ def chose_right(pose):
 
 def get_boundries(pose,frame_width,frame_height):
     if len(pose['people']) > 1:
+        print(len(pose['people']))
         index = chose_right(pose)
     else:
         index = 0
@@ -92,13 +93,14 @@ def get_boundries(pose,frame_width,frame_height):
     return max(int(center_x - length/2) - 30, 0), min(int(center_x + length/2)+ 30,frame_width),max(int(center_y - length/2)- 30,0), min(int(center_y + length/2)+ 30,frame_height)
 
 
-files = [os.path.basename(x)[:-4] for x in glob.glob(pose_dir+"*.avi")]
-# predefined list ['vid0534_0530_20160115','vid0534_0533_20160115','vid0054_0573_20160809','vid0058_0715_20171004','vid0281_8597_20170316','vid0534_8911_20170726']
+# files = [os.path.basename(x)[:-4] for x in glob.glob(pose_dir+"*.avi")]
+files = ['vid0198_6146_20170220']# ['vid0534_0530_20160115','vid0534_0533_20160115','vid0054_0573_20160809','vid0058_0715_20171004','vid0281_8597_20170316','vid0534_8911_20170726']
 
 
-for i in range(args.num_videos):
-    basename = random.choice(files)
-
+# for i in range(args.num_videos):
+for file in files:
+    # basename = random.choice(files)
+    basename = file
     model = torch.load('../models/hgreg-3d.pth', map_location=lambda storage, loc: storage, pickle_module=pickle).cuda()
     poses =  sorted(glob.glob(pose_dir+basename+'_poses/*.json'), key=os.path.basename)
     vidcap = cv2.VideoCapture(video_dir+basename+'.mp4')
@@ -113,23 +115,27 @@ for i in range(args.num_videos):
     fig = plt.figure(figsize=(9, 4.5))
     with writer.saving(fig, output_dir+basename+'.mp4',100):
         print( output_dir+basename+'.mp4')
+        print(len(poses))
         while success:
+            
             success,image = vidcap.read()
-            pose = json.load(open(poses[count]))
-            if len(pose['people']) > 0:
-                x1,x2,y1,y2 =get_boundries(pose,image.shape[0],image.shape[1])
-                img = cv2.resize(image[x1:x2,y1:y2], (256, 256)) #[:,-464:]
-                input = torch.from_numpy(img.transpose(2, 0, 1)).float() / 256.
-                input = input.view(1, input.size(0), input.size(1), input.size(2))
-                input_var = torch.autograd.Variable(input).float().cuda()
-                output = model(input_var)
-                pred = getPreds((output[-2].data).cpu().numpy())[0] * 4
-                reg = (output[-1].data).cpu().numpy().reshape(pred.shape[0], 1)
-                debugger = Debugger(fig)
-                debugger.addImg((input[0].numpy().transpose(1, 2, 0)*256).astype(np.uint8))
-                debugger.addPoint2D(pred, (255, 0, 0))
-                debugger.addPoint3D(np.concatenate([pred, (reg + 1) / 2. * 256], axis = 1))
-                debugger.show3D()
-                debugger.showImg()
-                writer.grab_frame()
+            if count % 30 == 0:
+                print(count)
+                pose = json.load(open(poses[count]))
+                if len(pose['people']) > 0:
+                    x1,x2,y1,y2 =get_boundries(pose,image.shape[0],image.shape[1])
+                    img = cv2.resize(image[x1:x2,y1:y2], (256, 256)) #[:,-464:]
+                    input = torch.from_numpy(img.transpose(2, 0, 1)).float() / 256.
+                    input = input.view(1, input.size(0), input.size(1), input.size(2))
+                    input_var = torch.autograd.Variable(input).float().cuda()
+                    output = model(input_var)
+                    pred = getPreds((output[-2].data).cpu().numpy())[0] * 4
+                    reg = (output[-1].data).cpu().numpy().reshape(pred.shape[0], 1)
+                    debugger = Debugger(fig)
+                    debugger.addImg((input[0].numpy().transpose(1, 2, 0)*256).astype(np.uint8))
+                    debugger.addPoint2D(pred, (255, 0, 0))
+                    debugger.addPoint3D(np.concatenate([pred, (reg + 1) / 2. * 256], axis = 1))
+                    debugger.show3D()
+                    debugger.showImg()
+                    writer.grab_frame()
             count += 1
