@@ -116,8 +116,6 @@ for file in files:
         print( output_dir+basename+'.mp4')
         print(len(poses))
         while success:
-            
-            success,image = vidcap.read()
             pose = json.load(open(poses[count]))
             if len(pose['people']) > 0:
                 x1,x2,y1,y2 =get_boundries(pose,image.shape[0],image.shape[1])
@@ -135,4 +133,5 @@ for file in files:
                 debugger.show3D()
                 debugger.showImg()
                 writer.grab_frame()
+            success,image = vidcap.read()
             count += 1
