@@ -113,11 +113,11 @@ for file in files:
     writer = FFMpegWriter(fps=30, metadata=metadata)
     fig = plt.figure(figsize=(9, 4.5))
     with writer.saving(fig, output_dir+basename+'.mp4',100):
+        print( output_dir+basename+'.mp4')
+        print(len(poses))
         while success:
             
             success,image = vidcap.read()
-            
-            print(count)
             pose = json.load(open(poses[count]))
             if len(pose['people']) > 0:
                 x1,x2,y1,y2 =get_boundries(pose,image.shape[0],image.shape[1])
